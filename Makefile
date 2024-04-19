@@ -27,10 +27,9 @@ PCLIBDIR ?= $(LIBDIR)/pkgconfig
 
 # collect C++ sources, and link if necessary
 CPPSRC := $(wildcard $(SRC_DIR)/*.cc)
-HSRC := $(wildcard $(SRC_DIR)/*.h)
 
 ifeq (, $(CPPSRC))
-	ADDITIONALLIBS :=
+	ADDITIONALLIBS := 
 else
 	ADDITIONALLIBS := -lc++
 endif
@@ -38,7 +37,6 @@ endif
 # collect sources
 SRC := $(wildcard $(SRC_DIR)/*.c)
 SRC += $(CPPSRC)
-SRC += $(HSRC)
 OBJ := $(addsuffix .o,$(basename $(SRC)))
 
 # ABI versioning
