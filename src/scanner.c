@@ -1,10 +1,11 @@
-#include <tree_sitter/parser.h>
+#include "tree_sitter/parser.h"
 #include <string.h>
 #include <wctype.h>
 
 #define TOKEN_COUNT 28
 
-enum TokenType {
+enum TokenType
+{
     BLOCK_COMMENT,
     RAW_STR_PART,
     RAW_STR_CONTINUING_INDICATOR,
@@ -37,7 +38,7 @@ enum TokenType {
 
 #define OPERATOR_COUNT 20
 
-const char* OPERATORS[OPERATOR_COUNT] = {
+const char *OPERATORS[OPERATOR_COUNT] = {
     "->",
     ".",
     "&&",
@@ -57,10 +58,10 @@ const char* OPERATORS[OPERATOR_COUNT] = {
     "as",
     "as?",
     "as!",
-    "async"
-};
+    "async"};
 
-enum IllegalTerminatorGroup {
+enum IllegalTerminatorGroup
+{
     ALPHANUMERIC,
     OPERATOR_SYMBOLS,
     OPERATOR_OR_DOT,
@@ -110,35 +111,34 @@ const enum TokenType OP_SYMBOLS[OPERATOR_COUNT] = {
     AS_KEYWORD,
     AS_QUEST,
     AS_BANG,
-    ASYNC_KEYWORD
-};
+    ASYNC_KEYWORD};
 
 const uint64_t OP_SYMBOL_SUPPRESSOR[OPERATOR_COUNT] = {
-    0, // ARROW_OPERATOR,
-    0, // DOT_OPERATOR,
-    0, // CONJUNCTION_OPERATOR,
-    0, // DISJUNCTION_OPERATOR,
-    0, // NIL_COALESCING_OPERATOR,
-    0, // EQUAL_SIGN,
-    0, // EQ_EQ,
-    0, // PLUS_THEN_WS,
-    0, // MINUS_THEN_WS,
+    0,                  // ARROW_OPERATOR,
+    0,                  // DOT_OPERATOR,
+    0,                  // CONJUNCTION_OPERATOR,
+    0,                  // DISJUNCTION_OPERATOR,
+    0,                  // NIL_COALESCING_OPERATOR,
+    0,                  // EQUAL_SIGN,
+    0,                  // EQ_EQ,
+    0,                  // PLUS_THEN_WS,
+    0,                  // MINUS_THEN_WS,
     1 << FAKE_TRY_BANG, // BANG,
-      0, // THROWS_KEYWORD,
-      0, // RETHROWS_KEYWORD,
-      0, // DEFAULT_KEYWORD,
-      0, // WHERE_KEYWORD,
-      0, // ELSE_KEYWORD,
-      0, // CATCH_KEYWORD,
-      0, // AS_KEYWORD,
-      0, // AS_QUEST,
-      0, // AS_BANG,
-      0, // ASYNC_KEYWORD
+    0,                  // THROWS_KEYWORD,
+    0,                  // RETHROWS_KEYWORD,
+    0,                  // DEFAULT_KEYWORD,
+    0,                  // WHERE_KEYWORD,
+    0,                  // ELSE_KEYWORD,
+    0,                  // CATCH_KEYWORD,
+    0,                  // AS_KEYWORD,
+    0,                  // AS_QUEST,
+    0,                  // AS_BANG,
+    0,                  // ASYNC_KEYWORD
 };
 
 #define RESERVED_OP_COUNT 31
 
-const char* RESERVED_OPS[RESERVED_OP_COUNT] = {
+const char *RESERVED_OPS[RESERVED_OP_COUNT] = {
     "/",
     "=",
     "-",
@@ -169,11 +169,12 @@ const char* RESERVED_OPS[RESERVED_OP_COUNT] = {
     "--",
     "===",
     "...",
-    "..<"
-};
+    "..<"};
 
-bool is_cross_semi_token(enum TokenType op) {
-    switch(op) {
+bool is_cross_semi_token(enum TokenType op)
+{
+    switch (op)
+    {
     case ARROW_OPERATOR:
     case DOT_OPERATOR:
     case CONJUNCTION_OPERATOR:
@@ -202,7 +203,7 @@ bool is_cross_semi_token(enum TokenType op) {
 }
 
 #define NON_CONSUMING_CROSS_SEMI_CHAR_COUNT 3
-const uint32_t NON_CONSUMING_CROSS_SEMI_CHARS[NON_CONSUMING_CROSS_SEMI_CHAR_COUNT] = { '?', ':', '{' };
+const uint32_t NON_CONSUMING_CROSS_SEMI_CHARS[NON_CONSUMING_CROSS_SEMI_CHAR_COUNT] = {'?', ':', '{'};
 
 /**
  * All possible results of having performed some sort of parsing.
@@ -215,7 +216,8 @@ const uint32_t NON_CONSUMING_CROSS_SEMI_CHARS[NON_CONSUMING_CROSS_SEMI_CHAR_COUN
  * will always populate its `symbol_result` field. When it returns one of the `STOP_PARSING` cases, callers should
  * immediately return (with the value, if there is one).
  */
-enum ParseDirective {
+enum ParseDirective
+{
     CONTINUE_PARSING_NOTHING_FOUND,
     CONTINUE_PARSING_TOKEN_FOUND,
     CONTINUE_PARSING_SLASH_CONSUMED,
@@ -224,24 +226,29 @@ enum ParseDirective {
     STOP_PARSING_END_OF_FILE
 };
 
-struct ScannerState {
+struct ScannerState
+{
     uint32_t ongoing_raw_str_hash_count;
 };
 
-void *tree_sitter_swift_external_scanner_create() {
+void *tree_sitter_swift_external_scanner_create()
+{
     return calloc(0, sizeof(struct ScannerState));
 }
 
-void tree_sitter_swift_external_scanner_destroy(void *payload) {
+void tree_sitter_swift_external_scanner_destroy(void *payload)
+{
     free(payload);
 }
 
-void tree_sitter_swift_external_scanner_reset(void *payload) {
+void tree_sitter_swift_external_scanner_reset(void *payload)
+{
     struct ScannerState *state = (struct ScannerState *)payload;
     state->ongoing_raw_str_hash_count = 0;
 }
 
-unsigned tree_sitter_swift_external_scanner_serialize(void *payload, char *buffer) {
+unsigned tree_sitter_swift_external_scanner_serialize(void *payload, char *buffer)
+{
     struct ScannerState *state = (struct ScannerState *)payload;
     uint32_t hash_count = state->ongoing_raw_str_hash_count;
     buffer[0] = (hash_count >> 24) & 0xff;
@@ -254,34 +261,38 @@ unsigned tree_sitter_swift_external_scanner_serialize(void *payload, char *buffe
 void tree_sitter_swift_external_scanner_deserialize(
     void *payload,
     const char *buffer,
-    unsigned length
-) {
-    if (length < 4) {
+    unsigned length)
+{
+    if (length < 4)
+    {
         return;
     }
 
-    uint32_t hash_count = (
-                              (((uint32_t) buffer[0]) << 24) |
-                              (((uint32_t) buffer[1]) << 16) |
-                              (((uint32_t) buffer[2]) << 8) |
-                              (((uint32_t) buffer[3]))
-                          );
+    uint32_t hash_count = ((((uint32_t)buffer[0]) << 24) |
+                           (((uint32_t)buffer[1]) << 16) |
+                           (((uint32_t)buffer[2]) << 8) |
+                           (((uint32_t)buffer[3])));
     struct ScannerState *state = (struct ScannerState *)payload;
     state->ongoing_raw_str_hash_count = hash_count;
 }
 
-static void advance(TSLexer *lexer) {
+static void advance(TSLexer *lexer)
+{
     lexer->advance(lexer, false);
 }
 
-static bool should_treat_as_wspace(int32_t character) {
-    return iswspace(character) || (((int32_t) ';') == character);
+static bool should_treat_as_wspace(int32_t character)
+{
+    return iswspace(character) || (((int32_t)';') == character);
 }
 
-static int32_t encountered_op_count(bool *encountered_operator) {
+static int32_t encountered_op_count(bool *encountered_operator)
+{
     int32_t encountered = 0;
-    for (int op_idx = 0; op_idx < OPERATOR_COUNT; op_idx++) {
-        if (encountered_operator[op_idx]) {
+    for (int op_idx = 0; op_idx < OPERATOR_COUNT; op_idx++)
+    {
+        if (encountered_operator[op_idx])
+        {
             encountered++;
         }
     }
@@ -289,9 +300,12 @@ static int32_t encountered_op_count(bool *encountered_operator) {
     return encountered;
 }
 
-static bool any_reserved_ops(uint8_t *encountered_reserved_ops) {
-    for (int op_idx = 0; op_idx < RESERVED_OP_COUNT; op_idx++) {
-        if (encountered_reserved_ops[op_idx] == 2) {
+static bool any_reserved_ops(uint8_t *encountered_reserved_ops)
+{
+    for (int op_idx = 0; op_idx < RESERVED_OP_COUNT; op_idx++)
+    {
+        if (encountered_reserved_ops[op_idx] == 2)
+        {
             return true;
         }
     }
@@ -302,10 +316,11 @@ static bool any_reserved_ops(uint8_t *encountered_reserved_ops) {
 static bool is_legal_custom_operator(
     int32_t char_idx,
     int32_t first_char,
-    int32_t cur_char
-) {
+    int32_t cur_char)
+{
     bool is_first_char = !char_idx;
-    switch (cur_char) {
+    switch (cur_char)
+    {
     case '=':
     case '-':
     case '+':
@@ -350,19 +365,22 @@ static bool is_legal_custom_operator(
             (cur_char >= 0x2E00 && cur_char <= 0x2E7F) ||
             (cur_char >= 0x3001 && cur_char <= 0x3003) ||
             (cur_char >= 0x3008 && cur_char <= 0x3020) ||
-            (cur_char == 0x3030)
-        ) {
+            (cur_char == 0x3030))
+        {
             return true;
-        } else if (
+        }
+        else if (
             (cur_char >= 0x0300 && cur_char <= 0x036f) ||
             (cur_char >= 0x1DC0 && cur_char <= 0x1DFF) ||
             (cur_char >= 0x20D0 && cur_char <= 0x20FF) ||
             (cur_char >= 0xFE00 && cur_char <= 0xFE0F) ||
             (cur_char >= 0xFE20 && cur_char <= 0xFE2F) ||
-            (cur_char >= 0xE0100 && cur_char <= 0xE01EF)
-        ) {
+            (cur_char >= 0xE0100 && cur_char <= 0xE01EF))
+        {
             return !is_first_char;
-        } else {
+        }
+        else
+        {
             return false;
         }
     }
@@ -373,14 +391,16 @@ static bool eat_operators(
     const bool *valid_symbols,
     bool mark_end,
     const int32_t prior_char,
-    enum TokenType *symbol_result
-) {
+    enum TokenType *symbol_result)
+{
     bool possible_operators[OPERATOR_COUNT];
     uint8_t reserved_operators[RESERVED_OP_COUNT];
-    for (int op_idx = 0; op_idx < OPERATOR_COUNT; op_idx++) {
+    for (int op_idx = 0; op_idx < OPERATOR_COUNT; op_idx++)
+    {
         possible_operators[op_idx] = valid_symbols[OP_SYMBOLS[op_idx]] && (!prior_char || OPERATORS[op_idx][0] == prior_char);
     }
-    for (int op_idx = 0; op_idx < RESERVED_OP_COUNT; op_idx++) {
+    for (int op_idx = 0; op_idx < RESERVED_OP_COUNT; op_idx++)
+    {
         reserved_operators[op_idx] = !prior_char || RESERVED_OPS[op_idx][0] == prior_char;
     }
 
@@ -390,16 +410,21 @@ static bool eat_operators(
 
     int32_t str_idx = prior_char ? 1 : 0;
     int32_t full_match = -1;
-    while(true) {
-        for (int op_idx = 0; op_idx < OPERATOR_COUNT; op_idx++) {
-            if (!possible_operators[op_idx]) {
+    while (true)
+    {
+        for (int op_idx = 0; op_idx < OPERATOR_COUNT; op_idx++)
+        {
+            if (!possible_operators[op_idx])
+            {
                 continue;
             }
 
-            if (OPERATORS[op_idx][str_idx] == '\0') {
+            if (OPERATORS[op_idx][str_idx] == '\0')
+            {
                 // Make sure that the operator is allowed to have the next character as its lookahead.
                 enum IllegalTerminatorGroup illegal_terminators = OP_ILLEGAL_TERMINATORS[op_idx];
-                switch (lexer->lookahead) {
+                switch (lexer->lookahead)
+                {
                 // See "Operators":
                 // https://docs.swift.org/swift-book/ReferenceManual/LexicalStructure.html#ID418
                 case '/':
@@ -416,26 +441,31 @@ static bool eat_operators(
                 case '^':
                 case '?':
                 case '~':
-                    if (illegal_terminators == OPERATOR_SYMBOLS) {
+                    if (illegal_terminators == OPERATOR_SYMBOLS)
+                    {
                         break;
                     } // Otherwise, intentionally fall through to the OPERATOR_OR_DOT case
                 // fall through
                 case '.':
-                    if (illegal_terminators == OPERATOR_OR_DOT) {
+                    if (illegal_terminators == OPERATOR_OR_DOT)
+                    {
                         break;
                     } // Otherwise, fall through to DEFAULT which checks its groups directly
                 // fall through
                 default:
-                    if (iswalnum(lexer->lookahead) && illegal_terminators == ALPHANUMERIC) {
+                    if (iswalnum(lexer->lookahead) && illegal_terminators == ALPHANUMERIC)
+                    {
                         break;
                     }
 
-                    if (!iswspace(lexer->lookahead) && illegal_terminators == NON_WHITESPACE) {
+                    if (!iswspace(lexer->lookahead) && illegal_terminators == NON_WHITESPACE)
+                    {
                         break;
                     }
 
                     full_match = op_idx;
-                    if (mark_end) {
+                    if (mark_end)
+                    {
                         lexer->mark_end(lexer);
                     }
                 }
@@ -444,44 +474,53 @@ static bool eat_operators(
                 continue;
             }
 
-            if (OPERATORS[op_idx][str_idx] != lexer->lookahead) {
+            if (OPERATORS[op_idx][str_idx] != lexer->lookahead)
+            {
                 possible_operators[op_idx] = false;
                 continue;
             }
         }
 
-        for (int op_idx = 0; op_idx < RESERVED_OP_COUNT; op_idx++) {
-            if (!reserved_operators[op_idx]) {
+        for (int op_idx = 0; op_idx < RESERVED_OP_COUNT; op_idx++)
+        {
+            if (!reserved_operators[op_idx])
+            {
                 continue;
             }
 
-            if (RESERVED_OPS[op_idx][str_idx] == '\0') {
+            if (RESERVED_OPS[op_idx][str_idx] == '\0')
+            {
                 reserved_operators[op_idx] = 0;
                 continue;
             }
 
-            if (RESERVED_OPS[op_idx][str_idx] != lexer->lookahead) {
+            if (RESERVED_OPS[op_idx][str_idx] != lexer->lookahead)
+            {
                 reserved_operators[op_idx] = 0;
                 continue;
             }
 
-            if (RESERVED_OPS[op_idx][str_idx + 1] == '\0') {
+            if (RESERVED_OPS[op_idx][str_idx + 1] == '\0')
+            {
                 reserved_operators[op_idx] = 2;
                 continue;
             }
         }
 
         possible_custom_operator = possible_custom_operator && is_legal_custom_operator(
-                                       str_idx,
-                                       first_char,
-                                       lexer->lookahead
-                                   );
+                                                                   str_idx,
+                                                                   first_char,
+                                                                   lexer->lookahead);
 
         uint32_t encountered_ops = encountered_op_count(possible_operators);
-        if (encountered_ops == 0) {
-            if (!possible_custom_operator) {
+        if (encountered_ops == 0)
+        {
+            if (!possible_custom_operator)
+            {
                 break;
-            } else if (mark_end && full_match == -1) {
+            }
+            else if (mark_end && full_match == -1)
+            {
                 lexer->mark_end(lexer);
             }
         }
@@ -491,27 +530,32 @@ static bool eat_operators(
         str_idx += 1;
 
         if (encountered_ops == 0 && !is_legal_custom_operator(
-                    str_idx,
-                    first_char,
-                    lexer->lookahead
-                )) {
+                                        str_idx,
+                                        first_char,
+                                        lexer->lookahead))
+        {
             break;
         }
     }
 
-    if (full_match != -1) {
+    if (full_match != -1)
+    {
         // We have a match -- first see if that match has a symbol that suppresses it. For example, in `try!`, we do not
         // want to emit the `!` as a symbol in our scanner, because we want the parser to have the chance to parse it as
         // an immediate token.
         uint64_t suppressing_symbols = OP_SYMBOL_SUPPRESSOR[full_match];
-        if (suppressing_symbols) {
-            for (uint64_t suppressor = 0; suppressor < TOKEN_COUNT; suppressor++) {
-                if (!(suppressing_symbols & 1 << suppressor)) {
+        if (suppressing_symbols)
+        {
+            for (uint64_t suppressor = 0; suppressor < TOKEN_COUNT; suppressor++)
+            {
+                if (!(suppressing_symbols & 1 << suppressor))
+                {
                     continue;
                 }
 
                 // The suppressing symbol is valid in this position, so skip it.
-                if (valid_symbols[suppressor]) {
+                if (valid_symbols[suppressor])
+                {
                     return false;
                 }
             }
@@ -520,8 +564,10 @@ static bool eat_operators(
         return true;
     }
 
-    if (possible_custom_operator && !any_reserved_ops(reserved_operators)) {
-        if ((last_examined_char != '<' || iswspace(lexer->lookahead)) && mark_end) {
+    if (possible_custom_operator && !any_reserved_ops(reserved_operators))
+    {
+        if ((last_examined_char != '<' || iswspace(lexer->lookahead)) && mark_end)
+        {
             lexer->mark_end(lexer);
         }
         *symbol_result = CUSTOM_OPERATOR;
@@ -535,15 +581,17 @@ static enum ParseDirective eat_comment(
     TSLexer *lexer,
     const bool *valid_symbols,
     bool mark_end,
-    enum TokenType *symbol_result
-) {
-    if (lexer->lookahead != '/') {
+    enum TokenType *symbol_result)
+{
+    if (lexer->lookahead != '/')
+    {
         return CONTINUE_PARSING_NOTHING_FOUND;
     }
 
     advance(lexer);
 
-    if (lexer->lookahead != '*') {
+    if (lexer->lookahead != '*')
+    {
         return CONTINUE_PARSING_SLASH_CONSUMED;
     }
 
@@ -551,8 +599,10 @@ static enum ParseDirective eat_comment(
 
     bool after_star = false;
     unsigned nesting_depth = 1;
-    for (;;) {
-        switch (lexer->lookahead) {
+    for (;;)
+    {
+        switch (lexer->lookahead)
+        {
         case '\0':
             return STOP_PARSING_END_OF_FILE;
         case '*':
@@ -560,21 +610,27 @@ static enum ParseDirective eat_comment(
             after_star = true;
             break;
         case '/':
-            if (after_star) {
+            if (after_star)
+            {
                 advance(lexer);
                 after_star = false;
                 nesting_depth--;
-                if (nesting_depth == 0) {
-                    if (mark_end) {
+                if (nesting_depth == 0)
+                {
+                    if (mark_end)
+                    {
                         lexer->mark_end(lexer);
                     }
                     *symbol_result = BLOCK_COMMENT;
                     return STOP_PARSING_TOKEN_FOUND;
                 }
-            } else {
+            }
+            else
+            {
                 advance(lexer);
                 after_star = false;
-                if (lexer->lookahead == '*') {
+                if (lexer->lookahead == '*')
+                {
                     nesting_depth++;
                     advance(lexer);
                 }
@@ -591,14 +647,17 @@ static enum ParseDirective eat_comment(
 static enum ParseDirective eat_whitespace(
     TSLexer *lexer,
     const bool *valid_symbols,
-    enum TokenType *symbol_result
-) {
+    enum TokenType *symbol_result)
+{
     enum ParseDirective ws_directive = CONTINUE_PARSING_NOTHING_FOUND;
     bool semi_is_valid = valid_symbols[IMPLICIT_SEMI] && valid_symbols[EXPLICIT_SEMI];
     uint32_t lookahead;
-    while (should_treat_as_wspace(lookahead = lexer->lookahead)) {
-        if (lookahead == ';') {
-            if (semi_is_valid) {
+    while (should_treat_as_wspace(lookahead = lexer->lookahead))
+    {
+        if (lookahead == ';')
+        {
+            if (semi_is_valid)
+            {
                 ws_directive = STOP_PARSING_TOKEN_FOUND;
                 lexer->advance(lexer, false);
             }
@@ -610,52 +669,67 @@ static enum ParseDirective eat_whitespace(
 
         lexer->mark_end(lexer);
 
-        if (ws_directive == CONTINUE_PARSING_NOTHING_FOUND && (lookahead == '\n' || lookahead == '\r')) {
+        if (ws_directive == CONTINUE_PARSING_NOTHING_FOUND && (lookahead == '\n' || lookahead == '\r'))
+        {
             ws_directive = CONTINUE_PARSING_TOKEN_FOUND;
         }
     }
 
     enum ParseDirective any_comment = CONTINUE_PARSING_NOTHING_FOUND;
-    if (ws_directive == CONTINUE_PARSING_TOKEN_FOUND && lookahead == '/') {
+    if (ws_directive == CONTINUE_PARSING_TOKEN_FOUND && lookahead == '/')
+    {
         bool has_seen_single_comment = false;
-        while (lexer->lookahead == '/') {
+        while (lexer->lookahead == '/')
+        {
             // It's possible that this is a comment - start an exploratory mission to find out, and if it is, look for what
             // comes after it. We care about what comes after it for the purpose of suppressing the newline.
 
             enum TokenType multiline_comment_result;
             any_comment = eat_comment(lexer, valid_symbols, /* mark_end */ false, &multiline_comment_result);
-            if (any_comment == STOP_PARSING_TOKEN_FOUND) {
+            if (any_comment == STOP_PARSING_TOKEN_FOUND)
+            {
                 // This is a multiline comment. This scanner should be parsing those, so we might want to bail out and
                 // emit it instead. However, we only want to do that if we haven't advanced through a _single_ line
                 // comment on the way - otherwise that will get lumped into this.
-                if (!has_seen_single_comment) {
+                if (!has_seen_single_comment)
+                {
                     lexer->mark_end(lexer);
                     *symbol_result = multiline_comment_result;
                     return STOP_PARSING_TOKEN_FOUND;
                 }
-            } else if (any_comment == STOP_PARSING_END_OF_FILE) {
+            }
+            else if (any_comment == STOP_PARSING_END_OF_FILE)
+            {
                 return STOP_PARSING_END_OF_FILE;
-            } else if (any_comment == CONTINUE_PARSING_SLASH_CONSUMED) {
+            }
+            else if (any_comment == CONTINUE_PARSING_SLASH_CONSUMED)
+            {
                 // We accidentally ate a slash -- we should actually bail out, say we saw nothing, and let the next pass
                 // take it from after the newline.
                 return CONTINUE_PARSING_SLASH_CONSUMED;
-            } else if (lexer->lookahead == '/') {
+            }
+            else if (lexer->lookahead == '/')
+            {
                 // There wasn't a multiline comment, which we know means that the comment parser ate its `/` and then
                 // bailed out. If it had seen anything comment-like after that first `/` it would have continued going
                 // and eventually had a well-formed comment or an EOF. Thus, if we're currently looking at a `/`, it's
                 // the second one of those and it means we have a single-line comment.
                 has_seen_single_comment = true;
-                while (lexer->lookahead != '\n' && lexer->lookahead != '\0') {
+                while (lexer->lookahead != '\n' && lexer->lookahead != '\0')
+                {
                     lexer->advance(lexer, true);
                 }
-            } else if (iswspace(lexer->lookahead)) {
+            }
+            else if (iswspace(lexer->lookahead))
+            {
                 // We didn't see any type of comment - in fact, we saw an operator that we don't normally treat as an
                 // operator. Still, this is a reason to stop parsing.
                 return STOP_PARSING_NOTHING_FOUND;
             }
 
             // If we skipped through some comment, we're at whitespace now, so advance.
-            while(iswspace(lexer->lookahead)) {
+            while (iswspace(lexer->lookahead))
+            {
                 any_comment = CONTINUE_PARSING_NOTHING_FOUND; // We're advancing, so clear out the comment
                 lexer->advance(lexer, true);
             }
@@ -663,16 +737,18 @@ static enum ParseDirective eat_whitespace(
 
         enum TokenType operator_result;
         bool saw_operator = eat_operators(
-                                lexer,
-                                valid_symbols,
-                                /* mark_end */ false,
-                                '\0',
-                                &operator_result
-                            );
-        if (saw_operator) {
+            lexer,
+            valid_symbols,
+            /* mark_end */ false,
+            '\0',
+            &operator_result);
+        if (saw_operator)
+        {
             // The operator we saw should suppress the newline, so bail out.
             return STOP_PARSING_NOTHING_FOUND;
-        } else {
+        }
+        else
+        {
             // Promote the implicit newline to an explicit one so we don't check for operators again.
             *symbol_result = IMPLICIT_SEMI;
             ws_directive = STOP_PARSING_TOKEN_FOUND;
@@ -681,15 +757,19 @@ static enum ParseDirective eat_whitespace(
 
     // Let's consume operators that can live after a "semicolon" style newline. Before we do that, though, we want to
     // check for a set of characters that we do not consume, but that still suppress the semi.
-    if (ws_directive == CONTINUE_PARSING_TOKEN_FOUND) {
-        for (int i = 0; i < NON_CONSUMING_CROSS_SEMI_CHAR_COUNT; i++) {
-            if (NON_CONSUMING_CROSS_SEMI_CHARS[i] == lookahead) {
+    if (ws_directive == CONTINUE_PARSING_TOKEN_FOUND)
+    {
+        for (int i = 0; i < NON_CONSUMING_CROSS_SEMI_CHAR_COUNT; i++)
+        {
+            if (NON_CONSUMING_CROSS_SEMI_CHARS[i] == lookahead)
+            {
                 return CONTINUE_PARSING_NOTHING_FOUND;
             }
         }
     }
 
-    if (semi_is_valid && ws_directive != CONTINUE_PARSING_NOTHING_FOUND) {
+    if (semi_is_valid && ws_directive != CONTINUE_PARSING_NOTHING_FOUND)
+    {
         *symbol_result = lookahead == ';' ? EXPLICIT_SEMI : IMPLICIT_SEMI;
         return ws_directive;
     }
@@ -701,34 +781,45 @@ static bool eat_raw_str_part(
     struct ScannerState *state,
     TSLexer *lexer,
     const bool *valid_symbols,
-    enum TokenType *symbol_result
-) {
+    enum TokenType *symbol_result)
+{
     uint32_t hash_count = state->ongoing_raw_str_hash_count;
-    if (!valid_symbols[RAW_STR_PART]) {
+    if (!valid_symbols[RAW_STR_PART])
+    {
         return false;
-    } else if (hash_count == 0) {
+    }
+    else if (hash_count == 0)
+    {
         // If this is a raw_str_part, it's the first one - look for hashes
-        while (lexer->lookahead == '#') {
+        while (lexer->lookahead == '#')
+        {
             hash_count += 1;
             advance(lexer);
         }
 
-        if (hash_count == 0) {
+        if (hash_count == 0)
+        {
             return false;
         }
 
-        if (lexer->lookahead == '"') {
+        if (lexer->lookahead == '"')
+        {
             advance(lexer);
-        } else {
+        }
+        else
+        {
             return false;
         }
-
-    } else if (valid_symbols[RAW_STR_CONTINUING_INDICATOR]) {
+    }
+    else if (valid_symbols[RAW_STR_CONTINUING_INDICATOR])
+    {
         // This is the end of an interpolation - now it's another raw_str_part. This is a synthetic
         // marker to tell us that the grammar just consumed a `(` symbol to close a raw
         // interpolation (since we don't want to fire on every `(` in existence). We don't have
         // anything to do except continue.
-    } else {
+    }
+    else
+    {
         return false;
     }
 
@@ -739,14 +830,17 @@ static bool eat_raw_str_part(
     // visit; if we see a `\#(`, for instance, with the appropriate number of hash symbols, we want
     // to end our parsing _before_ that sequence. This allows highlighting tools to treat that as a
     // separate token.
-    while (lexer->lookahead != '\0') {
+    while (lexer->lookahead != '\0')
+    {
         uint8_t last_char = '\0';
         lexer->mark_end(lexer); // We always want to parse thru the start of the string so far
         // Advance through anything that isn't a hash symbol, because we want to count those.
-        while (lexer->lookahead != '#' && lexer->lookahead != '\0') {
+        while (lexer->lookahead != '#' && lexer->lookahead != '\0')
+        {
             last_char = lexer->lookahead;
             advance(lexer);
-            if (last_char != '\\' || lexer->lookahead == '\\') {
+            if (last_char != '\\' || lexer->lookahead == '\\')
+            {
                 // Mark a new end, but only if we didn't just advance past a `\` symbol, since we
                 // don't want to consume that. Exception: if this is a `\` that happens _right
                 // after_ another `\`, we for some reason _do_ want to consume that, because
@@ -757,7 +851,8 @@ static bool eat_raw_str_part(
 
         // We hit at least one hash - count them and see if they match.
         uint32_t current_hash_count = 0;
-        while (lexer->lookahead == '#' && current_hash_count < hash_count) {
+        while (lexer->lookahead == '#' && current_hash_count < hash_count)
+        {
             current_hash_count += 1;
             advance(lexer);
         }
@@ -766,13 +861,17 @@ static bool eat_raw_str_part(
         // 1. We're trying to interpolate into this string.
         // 2. The string just ended.
         // 3. This was just some hash characters doing nothing important.
-        if (current_hash_count == hash_count) {
-            if (last_char == '\\' && lexer->lookahead == '(') {
+        if (current_hash_count == hash_count)
+        {
+            if (last_char == '\\' && lexer->lookahead == '(')
+            {
                 // Interpolation case! Don't consume those chars; they get saved for grammar.js.
                 *symbol_result = RAW_STR_PART;
                 state->ongoing_raw_str_hash_count = hash_count;
                 return true;
-            } else if (last_char == '"') {
+            }
+            else if (last_char == '"')
+            {
                 // The string is finished! Mark the end here, on the very last hash symbol.
                 lexer->mark_end(lexer);
                 *symbol_result = RAW_STR_END_PART;
@@ -789,20 +888,22 @@ static bool eat_raw_str_part(
 bool tree_sitter_swift_external_scanner_scan(
     void *payload,
     TSLexer *lexer,
-    const bool *valid_symbols
-) {
+    const bool *valid_symbols)
+{
     // Figure out our scanner state
     struct ScannerState *state = (struct ScannerState *)payload;
 
     // Consume any whitespace at the start.
     enum TokenType ws_result;
     enum ParseDirective ws_directive = eat_whitespace(lexer, valid_symbols, &ws_result);
-    if (ws_directive == STOP_PARSING_TOKEN_FOUND) {
+    if (ws_directive == STOP_PARSING_TOKEN_FOUND)
+    {
         lexer->result_symbol = ws_result;
         return true;
     }
 
-    if (ws_directive == STOP_PARSING_NOTHING_FOUND || ws_directive == STOP_PARSING_END_OF_FILE) {
+    if (ws_directive == STOP_PARSING_NOTHING_FOUND || ws_directive == STOP_PARSING_END_OF_FILE)
+    {
         return false;
     }
 
@@ -811,32 +912,36 @@ bool tree_sitter_swift_external_scanner_scan(
     // Now consume comments (before custom operators so that those aren't treated as comments)
     enum TokenType comment_result;
     enum ParseDirective comment = ws_directive == CONTINUE_PARSING_SLASH_CONSUMED ? ws_directive : eat_comment(lexer, valid_symbols, /* mark_end */ true, &comment_result);
-    if (comment == STOP_PARSING_TOKEN_FOUND) {
+    if (comment == STOP_PARSING_TOKEN_FOUND)
+    {
         lexer->mark_end(lexer);
         lexer->result_symbol = comment_result;
         return true;
     }
 
-    if (comment == STOP_PARSING_END_OF_FILE) {
+    if (comment == STOP_PARSING_END_OF_FILE)
+    {
         return false;
     }
     // Now consume any operators that might cause our whitespace to be suppressed.
     enum TokenType operator_result;
     bool saw_operator = eat_operators(
-                            lexer,
-                            valid_symbols,
-                            /* mark_end */ !has_ws_result,
-                            comment == CONTINUE_PARSING_SLASH_CONSUMED ? '/' : '\0',
-                            &operator_result
-                        );
+        lexer,
+        valid_symbols,
+        /* mark_end */ !has_ws_result,
+        comment == CONTINUE_PARSING_SLASH_CONSUMED ? '/' : '\0',
+        &operator_result);
 
-    if (saw_operator && (!has_ws_result || is_cross_semi_token(operator_result))) {
+    if (saw_operator && (!has_ws_result || is_cross_semi_token(operator_result)))
+    {
         lexer->result_symbol = operator_result;
-        if (has_ws_result) lexer->mark_end(lexer);
+        if (has_ws_result)
+            lexer->mark_end(lexer);
         return true;
     }
 
-    if (has_ws_result) {
+    if (has_ws_result)
+    {
         // Don't `mark_end`, since we may have advanced through some operators.
         lexer->result_symbol = ws_result;
         return true;
@@ -846,11 +951,11 @@ bool tree_sitter_swift_external_scanner_scan(
     // it at the end so that it doesn't interfere with special literals or selectors!
     enum TokenType raw_str_result;
     bool saw_raw_str_part = eat_raw_str_part(state, lexer, valid_symbols, &raw_str_result);
-    if (saw_raw_str_part) {
+    if (saw_raw_str_part)
+    {
         lexer->result_symbol = raw_str_result;
         return true;
     }
 
     return false;
 }
-
