@@ -29,7 +29,7 @@ PCLIBDIR ?= $(LIBDIR)/pkgconfig
 CPPSRC := $(wildcard $(SRC_DIR)/*.cc)
 
 ifeq (, $(CPPSRC))
-	ADDITIONALLIBS := 
+	ADDITIONALLIBS :=
 else
 	ADDITIONALLIBS := -lc++
 endif
@@ -43,8 +43,8 @@ OBJ := $(addsuffix .o,$(basename $(SRC)))
 SONAME_MAJOR := 0
 SONAME_MINOR := 0
 
-CFLAGS ?= -O3 -Wall -Wextra -I$(SRC_DIR)
-CXXFLAGS ?= -O3 -Wall -Wextra -I$(SRC_DIR)
+CFLAGS ?= -O3 -Wall -Wextra -I$(SRC_DIR) -I$(SRC_DIR)/tree_sitter
+CXXFLAGS ?= -O3 -Wall -Wextra -I$(SRC_DIR) -I$(SRC_DIR)/tree_sitter
 override CFLAGS += -std=gnu99 -fPIC
 override CXXFLAGS += -fPIC
 
@@ -71,7 +71,7 @@ endif
 ifneq (,$(filter $(shell uname),FreeBSD NetBSD DragonFly))
 	PCLIBDIR := $(PREFIX)/libdata/pkgconfig
 endif
-				
+
 all: libtree-sitter-$(PARSER_NAME).a libtree-sitter-$(PARSER_NAME).$(SOEXTVER) bindings/c/$(PARSER_NAME).h bindings/c/tree-sitter-$(PARSER_NAME).pc
 
 libtree-sitter-$(PARSER_NAME).a: $(OBJ)
