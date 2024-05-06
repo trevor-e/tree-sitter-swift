@@ -5,8 +5,8 @@
   "main": "bindings/node/index.js",
   "types": "bindings/node",
   "scripts": {
-    "install": "node-gyp-build",
-    "postinstall": "node-gyp configure && node-gyp build",
+    "install": "node-gyp-build -v",
+    "postinstall": "node-gyp -v configure && node-gyp -v build",
     "build": "tree-sitter generate --no-bindings",
     "build-wasm": "tree-sitter build --wasm",
     "ci": "prettier --check grammar.js",
