@@ -18,17 +18,6 @@
         "-std=c11",
       ],
       "actions": [
-        // {
-        //   "action_name": "wait_for_tree_sitter",
-        //   "action": [
-        //     "node",
-        //     "scripts/wait-for-tree-sitter.js"
-        //   ],
-        //   "inputs": [],
-        //   "outputs": [
-        //     "node_modules/tree-sitter-cli"
-        //   ]
-        // },
         {
           "action_name": "generate_header_files",
           "inputs": [
