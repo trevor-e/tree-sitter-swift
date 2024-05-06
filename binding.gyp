@@ -18,24 +18,26 @@
         "-std=c11",
       ],
       "actions": [
-        {
-          "action_name": "generate_header_files",
-          "inputs": [
-            "grammar.js",
-            "node_modules/tree-sitter-cli"
-          ],
-          "outputs": [
-            "src/grammar.json",
-            "src/node-types.json",
-            "src/parser.c",
-            "src/tree_sitter",
-          ],
-          "action": [
-            "tree-sitter",
-            "generate",
-            "--no-bindings"
-          ],
-        }
+          {
+	      "action_name": "wait_for_tree_sitter",
+	      "action": ["node", "scripts/wait-for-tree-sitter.js"],
+	      "inputs": [],
+	      "outputs": ["node_modules/tree-sitter-cli"]
+	  },
+          {
+	      "action_name": "generate_header_files",
+	      "inputs": [
+	          "grammar.js",
+		  "node_modules/tree-sitter-cli"
+	      ],
+	      "outputs": [
+	          "src/grammar.json",
+		  "src/node-types.json",
+		  "src/parser.c",
+		  "src/tree_sitter",
+	      ],
+	      "action": ["tree-sitter", "generate", "--no-bindings"],
+	  }
       ]
     }
   ]
