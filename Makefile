@@ -29,7 +29,7 @@ PCLIBDIR ?= $(LIBDIR)/pkgconfig
 CPPSRC := $(wildcard $(SRC_DIR)/*.cc)
 
 ifeq (, $(CPPSRC))
-	ADDITIONALLIBS := 
+	ADDITIONALLIBS :=
 else
 	ADDITIONALLIBS := -lc++
 endif
@@ -71,7 +71,7 @@ endif
 ifneq (,$(filter $(shell uname),FreeBSD NetBSD DragonFly))
 	PCLIBDIR := $(PREFIX)/libdata/pkgconfig
 endif
-				
+
 all: libtree-sitter-$(PARSER_NAME).a libtree-sitter-$(PARSER_NAME).$(SOEXTVER) bindings/c/$(PARSER_NAME).h bindings/c/tree-sitter-$(PARSER_NAME).pc
 
 libtree-sitter-$(PARSER_NAME).a: $(OBJ)
@@ -109,7 +109,7 @@ install: all
 
 # Regenerate the parser if the grammar file is newer.
 src/parser.c: grammar.js
-	npx tree-sitter generate
+	npx --no-install tree-sitter generate
 
 clean:
 	rm -f $(OBJ) libtree-sitter-$(PARSER_NAME).a libtree-sitter-$(PARSER_NAME).$(SOEXT) libtree-sitter-$(PARSER_NAME).$(SOEXTVER_MAJOR) libtree-sitter-$(PARSER_NAME).$(SOEXTVER)

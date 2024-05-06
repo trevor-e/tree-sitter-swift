@@ -6,7 +6,7 @@
   "types": "bindings/node",
   "scripts": {
     "install": "node-gyp-build",
-    "postinstall": "node-gyp -v configure && node-gyp -v build",
+    "postinstall": "node-gyp configure --verbose && node-gyp build --verbose",
     "build": "tree-sitter generate --no-bindings",
     "build-wasm": "tree-sitter build --wasm",
     "ci": "prettier --check grammar.js",
