@@ -9,6 +9,7 @@ async function main() {
   const treeSitterExecutable = await which("tree-sitter");
   if (!treeSitterExecutable.includes("node_modules")) {
     // Not installed through npm, so should be safe.
+    console.log("Tree-sitter is installed globally.");
     return;
   }
 
@@ -41,6 +42,7 @@ async function waitForOneOf(dir, files) {
         return;
       }
     } catch {
+      console.log(`Waiting for ${file} to be created...`);
       // File doesn't yet exist -- we must wait for it.
     }
   }
@@ -55,6 +57,7 @@ async function waitForOneOf(dir, files) {
           let resolved = false;
           canExecute(path.join(dir, filename)).then((canExec) => {
             if (canExec && !resolved) {
+              console.log(`Tree-sitter executable found: ${filename}`);
               resolve();
               resolved = true;
             }
